@@ -1,46 +1,244 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Links</title>
+    <title>Plataforma de Streaming com Lista M3U8</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* Reset básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #fff;
+            line-height: 1.6;
         }
-        .download-button {
+
+        /* Cabeçalho */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: #181818;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff0000;
+        }
+
+        /* Reprodutor de Vídeo */
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* Aspect ratio 16:9 */
+            overflow: hidden;
+            margin: 2rem auto;
+        }
+
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Lista de Transmissões */
+        .transmission-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Reduzido para ícones menores */
+            gap: 1rem; /* Espaçamento menor entre itens */
+            padding: 0 1rem;
+        }
+
+        .transmission-item {
+            background-color: #181818;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-align: center; /* Centraliza o texto */
+        }
+
+        .transmission-item:hover {
+            transform: translateY(-5px); /* Movimento menor ao passar o mouse */
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .transmission-item img {
+            width: 70px; /* Diminuiu o tamanho da imagem */
+            height: 70px; /* Diminuiu o tamanho da imagem */
+            object-fit: cover;
             display: block;
-            width: 200px;
-            padding: 10px;
-            margin: 10px auto;
-            background-color: #4CAF50;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+            margin: 0 auto; /* Centraliza a imagem */
         }
-        .download-button:hover {
-            background-color: #45a049;
+
+        .transmission-item-info {
+            padding: 0.5rem; /* Preenchimento menor */
+        }
+
+        .transmission-item-title {
+            font-size: 0.8rem; /* Tamanho de fonte menor */
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+            white-space: nowrap; /* Evita quebrar linhas */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Adiciona reticências em títulos longos */
+        }
+
+        /* Botão Play Centralizado */
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 2rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        video:hover + .play-button {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <h1>Baixe Seus Arquivos</h1>
-    <a href="#" class="download-button" id="link1">STAR</a>
-    <a href="#" class="download-button" id="link2">M3U</a>
-    <a href="#" class="download-button" id="link3">Mac player</a>
-    <a href="#" class="download-button" id="link4">Star Vod</a>
-    <a href="#" class="download-button" id="link5">Star Play</a>
-<h1>Solicite a liberação</h1>	
+    <!-- Cabeçalho -->
+    <header>
+        <h1>Streaming web</h1>
+        <div>
+            <i class="fas fa-search"></i>
+            <i class="fas fa-bell"></i>
+        </div>
+    </header>
 
+    <!-- Reprodutor de Vídeo -->
+    <div class="video-container">
+        <video id="videoPlayer" controls autoplay muted></video>
+        <button class="play-button" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+    </div>
+
+    <!-- Lista de Transmissões -->
+    <h2 style="text-align: center; margin: 2rem 0; font-size: 1.5rem;">Selecione o canal:</h2>
+    <div class="transmission-list" id="transmissionList"></div>
+
+    <!-- Importe a biblioteca HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script>
-        document.getElementById('link1').href = 'ttps://github.com/Aldemirps/Maxptv/raw/refs/heads/main/STAR%20tv+playermelhoradofluxo.apk';
-        document.getElementById('link2').href = 'ttps://raw.githubusercontent.com/Aldemirps/Maxptv/refs/heads/main/maximo.m3u';
-        document.getElementById('link3').href = 'https://github.com/Aldemirps/Maxptv/raw/refs/heads/main/CLARO%20TV%20+_1.2.apk';
-        document.getElementById('link4').href = 'ttps://github.com/Aldemirps/Maxptv/raw/refs/heads/main/STAR%20VOD%20+_1.2.0.apk';
-        document.getElementById('link5').href = 'ttps://github.com/Aldemirps/Maxptv/raw/refs/heads/main/Startv_1.0.apk';
+        // Elementos do DOM
+        const video = document.getElementById('videoPlayer');
+        const transmissionList = document.getElementById('transmissionList');
+
+        // Função para carregar a lista M3U8 de um URL
+        async function loadM3UList(url) {
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                parseM3UList(text);
+            } catch (error) {
+                console.error('Erro ao carregar a lista M3U8:', error);
+            }
+        }
+
+        // Função para analisar a lista M3U8
+        function parseM3UList(m3uText) {
+            const lines = m3uText.split('\n');
+            const transmissions = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('#EXTINF:')) {
+                    const infoLine = lines[i];
+                    const urlLine = lines[i + 1];
+                    // Extrai informações do canal
+                    const [, title] = infoLine.match(/,(.*)/) || [];
+                    const logoMatch = infoLine.match(/tvg-logo="(.*?)"/);
+                    const logo = logoMatch ? logoMatch[1] : 'https://via.placeholder.com/70'; // Diminuiu o placeholder
+                    // Adiciona à lista de transmissões
+                    transmissions.push({
+                        title: title.trim(),
+                        logo: logo,
+                        url: urlLine.trim()
+                    });
+                }
+            }
+            createTransmissionList(transmissions);
+        }
+
+        // Função para criar a lista de transmissões
+        function createTransmissionList(transmissions) {
+            transmissions.forEach((transmission) => {
+                const transmissionItem = document.createElement('div');
+                transmissionItem.classList.add('transmission-item');
+                transmissionItem.innerHTML = `
+                    <img src="${transmission.logo}" alt="${transmission.title}">
+                    <div class="transmission-item-info">
+                        <div class="transmission-item-title">${transmission.title}</div>
+                    </div>
+                `;
+                transmissionItem.addEventListener('click', () => loadStream(transmission.url));
+                transmissionList.appendChild(transmissionItem);
+            });
+        }
+
+        // Função para carregar o stream selecionado
+        function loadStream(m3u8Url) {
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                // Destroi qualquer instância existente de HLS
+                if (video.src) {
+                    hls.destroy();
+                }
+                // Carrega o novo stream
+                hls.loadSource(m3u8Url);
+                hls.attachMedia(video);
+                // Inicia a reprodução
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    video.play();
+                });
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = m3u8Url;
+                video.addEventListener('loadedmetadata', function () {
+                    video.play();
+                });
+            } else {
+                alert('Seu navegador não suporta a reprodução de streams HLS.');
+            }
+        }
+
+        // Função para alternar entre play/pause
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+
+        // Carrega a lista M3U8 no início
+        loadM3UList('https://raw.githubusercontent.com/Aldemirps/Playfree/refs/heads/main/free.m3u');
     </script>
 </body>
-</html>
+</html><ALOASK-SEPARATE-EDITORS>html {
+   background: linear-gradient(to right, dodgerblue 0%, deepskyblue 100%);
+}
+h1{
+   color: white;
+}
+<ALOASK-SEPARATE-EDITORS>console.log('JavaScript Console');
