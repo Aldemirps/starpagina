@@ -1,32 +1,38 @@
-<?php
-// Obtém os parâmetros da URL
-$username = isset($_GET['username']) ? $_GET['username'] : '';
-$password = isset($_GET['password']) ? $_GET['password'] : '';
-$type = isset($_GET['type']) ? $_GET['type'] : '';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Listas M3U</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    h1 { color: #333; }
+    .lista { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    a { color: #007bff; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>Listas M3U Disponíveis</h1>
+  <div id="painel"></div>
 
-// Verifica as credenciais e o tipo
-if ($username === 'admin' && $password === 'admin' && ($type === 'm3u_plus' || $type === 'm3u')) {
-    // URL do arquivo .m3u no GitHub
-    $m3u_url = 'https://raw.githubusercontent.com/Aldemirps/Maxptv/main/maximo.m3u';
-
-    // Faz a requisição para o arquivo .m3u
-    $response = file_get_contents($m3u_url);
-
-    if ($response !== false) {
-        // Define o cabeçalho para o tipo de conteúdo
-        header('Content-Type: audio/x-mpegurl');
-        echo $response;
-        exit;
-    } else {
-        // Erro ao buscar o arquivo
-        http_response_code(500);
-        echo 'Erro ao buscar o arquivo .m3u';
-        exit;
-    }
-} else {
-    // Resposta para credenciais ou tipo inválidos
-    http_response_code(401);
-    echo 'Usuário ou senha inválidos ou tipo inválido.';
-    exit;
-}
-?>
+  <script>
+    fetch('listas.json')
+      .then(response => response.json())
+      .then(data => {
+        const painel = document.getElementById('painel');
+        data.listas.forEach(lista => {
+          const div = document.createElement('div');
+          div.className = 'lista';
+          div.innerHTML = `
+            <strong>${lista.nome}</strong><br>
+            <a href="${lista.url}" target="_blank">${lista.url}</a>
+          `;
+          painel.appendChild(div);
+        });
+      })
+      .catch(err => {
+        document.getElementById('painel').innerText = 'Erro ao carregar as listas.';
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
