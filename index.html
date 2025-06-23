@@ -1,38 +1,38 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Painel de Listas M3U</title>
+  <title>Painel IPTV - Listas M3U</title>
   <style>
-    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
-    h1 { color: #333; }
-    .lista { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    a { color: #007bff; word-break: break-all; }
+    body { background: #111; color: #eee; font-family: sans-serif; padding: 20px; }
+    h1 { color: #00ffff; }
+    .lista {
+      background: #222; margin: 10px 0; padding: 15px; border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    a {
+      color: #00ff88; font-weight: bold;
+      word-break: break-all;
+      display: inline-block;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
-  <h1>Listas M3U Disponíveis</h1>
-  <div id="painel"></div>
+  <h1>📺 Painel de Listas M3U</h1>
 
-  <script>
-    fetch('listas.json')
-      .then(response => response.json())
-      .then(data => {
-        const painel = document.getElementById('painel');
-        data.listas.forEach(lista => {
-          const div = document.createElement('div');
-          div.className = 'lista';
-          div.innerHTML = `
-            <strong>${lista.nome}</strong><br>
-            <a href="${lista.url}" target="_blank">${lista.url}</a>
-          `;
-          painel.appendChild(div);
-        });
-      })
-      .catch(err => {
-        document.getElementById('painel').innerText = 'Erro ao carregar as listas.';
-        console.error(err);
-      });
-  </script>
+  <div class="lista">
+    <strong>✅ Canais ao Vivo - Lista Máxima</strong><br>
+    <a href="https://raw.githubusercontent.com/Aldemirps/Maxptv/refs/heads/main/maximo.m3u" target="_blank">
+      Acessar Lista .M3U
+    </a>
+  </div>
+
+  <div class="lista">
+    <strong>🎬 Filmes e Séries - Lista Akira</strong><br>
+    <a href="http://dns.akira.best/get.php?username=ZdEtSNbXb37d&password=xbb2ns98aprW&type=m3u_plus&output=m3u8" target="_blank">
+      Acessar Lista .M3U
+    </a>
+  </div>
 </body>
 </html>
