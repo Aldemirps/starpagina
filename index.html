@@ -1,1 +1,206 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rádios do Brasil – Player</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <!-- Ícones & cores para instalar como PWA -->
+  <link rel="manifest" href="data:application/manifest+json,{
+    \"name\":\"Rádios do Brasil\",
+    \"short_name\":\"Rádios BR\",
+    \"start_url\":\"./index2.html\",
+    \"display\":\"standalone\",
+    \"background_color\":\"#191414\",
+    \"theme_color\":\"#1DB954\",
+    \"icons\":[
+      {\"src\":\"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMURCOTU0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAwQzUuNCAwIDAgNS40IDAgMTJzNS40IDEyIDEyIDEyIDEyLTUuNCAxMi0xMlMxOC42NiAwIDEyIDB6bTUuNTIxIDE3LjM0Yy0uMjQuMzU5LS42Ni40OC0xLjAyMS4yNC0yLjgyLTEuNzQtNi4zNi0yLjEwMS0xMC41NjEtMS4xNDEtLjQxOC4xMjItLjc3OS0uMTc5LS44OTktLjUzOS0uMTItLjQyMS4xOC0uNzguNTQtLjkgNC41Ni0xLjAyMSA4LjUyLS42IDExLjY0IDEuMzIuNDIuMTguNDc5LjY1OS4zMDEgMS4wMnptMS40NC0zLjNjLS4zMDEuNDItLjg0MS42LTEuMjYyLjMtMy4yMzktMS45OC04LjE1OS0yLjU4LTExLjkzOS0xLjM4LS40NzkuMTItMS4wMi0uMTItMS4xNC0uNi0uMTItLjQ4LjEyLTEuMDIxLjYtMS4xNDFDOS42IDkuOSAxNSAxMC41NjEgMTguNzIgMTIuODRjLjM2MS4xODEuNTQuNzguMjQxIDEuMnptLjEyLTMuMzZDMTUuMjQgOC40IDguODIgOC4xNiA1LjE2IDkuMzAxYy0uNi4xNzktMS4yLS4xODEtMS4zOC0uNzIxLS4xOC0uNjAxLjE4LTEuMi43Mi0xLjM4MSA0LjI2LTEuMjYgMTEuMjgtMS4wMiAxNS43MjEgMS42MjEuNTM5LjMuNzE5IDEuMDIuNDE5IDEuNTYtLjI5OS40MjEtMS4wMi41OTktMS41NTkuM3oiLz48L3N2Zz4=\",\"sizes\":\"192x192\",\"type\":\"image/svg+xml\"}
+    ]
+  }"/>
+
+  <style>
+    :root {
+      --spotify-green: #1DB954;
+      --spotify-black: #191414;
+      --spotify-dark: #121212;
+      --spotify-light: #282828;
+      --spotify-text: #FFFFFF;
+      --spotify-subtext: #B3B3B3;
+    }
+    * {box-sizing: border-box;}
+    html, body {margin: 0; height: 100%; font-family: 'Poppins', sans-serif; background: var(--spotify-black); color: var(--spotify-text);}
+    #app {display: flex; flex-direction: column; height: 100vh; max-width: 100%;}
+    header {flex-shrink: 0; padding: 12px 16px; background: var(--spotify-dark); display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.4);}
+    header svg {width: 28px; height: 28px;}
+    header h1 {font-size: 18px; font-weight: 700; background: linear-gradient(90deg, var(--spotify-green), #1ED760); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+    main {flex: 1 1 auto; overflow-y: auto; padding: 12px 16px;}
+    .now-playing {margin-bottom: 12px; font-size: 14px; text-align: center; color: var(--spotify-green); display: flex; align-items: center; justify-content: center;}
+    .now-playing::before {content: ""; width: 8px; height: 8px; background: var(--spotify-green); border-radius: 50%; margin-right: 6px; animation: pulse 1.5s infinite;}
+    @keyframes pulse {0%{transform:scale(.9)}50%{transform:scale(1.2)}100%{transform:scale(.9)}}
+    .radio-list {list-style: none; padding: 0; margin: 0;}
+    .radio-list li {padding: 14px 12px; margin-bottom: 8px; background: var(--spotify-light); border-radius: 8px; display: flex; align-items: center; gap: 12px; font-size: 15px;}
+    .radio-list li.playing {border-left: 4px solid var(--spotify-green); background: rgba(29,185,84,.15);}
+    .radio-icon {width: 28px; height: 28px; background: var(--spotify-green); color: var(--spotify-black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;}
+    .radio-name {font-weight: 600;}
+    .radio-location {font-size: 12px; color: var(--spotify-subtext);}
+    footer {flex-shrink: 0; padding: 12px 16px; background: var(--spotify-dark); border-top: 1px solid #333;}
+    audio {width: 100%; height: 44px; border-radius: 500px; filter: invert(1) hue-rotate(180deg) brightness(1.5);}
+    .loading {text-align: center; padding: 40px 0; color: var(--spotify-subtext);}
+    .loading-spinner {width: 32px; height: 32px; border: 4px solid rgba(255,255,255,.2); border-top-color: var(--spotify-green); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
+    @keyframes spin {to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="#1DB954">
+        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+      </svg>
+      <h1>Rádios do Brasil</h1>
+    </header>
+
+    <main>
+      <div class="now-playing" id="nowPlaying">Selecione uma rádio</div>
+      <ul class="radio-list" id="radioList">
+        <div class="loading"><div class="loading-spinner"></div></div>
+      </ul>
+    </main>
+
+    <footer>
+      <audio id="audioPlayer" controls preload="none"></audio>
+    </footer>
+  </div>
+
+  <script>
+    const audio = document.getElementById('audioPlayer');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const radioList = document.getElementById('radioList');
+    let currentPlayingItem = null;
+
+    /* ---------- Service Worker ---------- */
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register(
+        URL.createObjectURL(new Blob([`
+          self.addEventListener('install', () => self.skipWaiting());
+          self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch', () => { /* apenas para manter vivo */ });
+        `], {type: 'application/javascript'}))
+      );
+    }
+
+    /* ---------- Wake Lock ---------- */
+    let wakeLock = null;
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => console.log('WakeLock released'));
+        }
+      } catch (err) {
+        console.warn('WakeLock não disponível', err);
+      }
+    }
+    function releaseWakeLock() {
+      wakeLock && wakeLock.release().then(() => wakeLock = null);
+    }
+    audio.addEventListener('play',  requestWakeLock);
+    audio.addEventListener('pause', releaseWakeLock);
+
+    /* ---------- M3U loader ---------- */
+    function getQueryParam(name) {
+      return new URL(window.location.href).searchParams.get(name);
+    }
+    async function loadM3U(file) {
+      try {
+        radioList.innerHTML = '<div class="loading"><div class="loading-spinner"></div></div>';
+        const res = await fetch(file);
+        if (!res.ok) throw new Error('Erro ao baixar M3U');
+        const text = await res.text();
+        const radios = [];
+        let name = '', location = '';
+        text.split('\n').forEach(line => {
+          line = line.trim();
+          if (line.startsWith('#EXTINF:-1,')) {
+            const full = line.replace('#EXTINF:-1,', '');
+            const parts = full.split(' $');
+            name = parts[0].trim();
+            location = parts[1] ? parts[1].trim() : 'Brasil';
+          } else if (line && !line.startsWith('#') && line.startsWith('http')) {
+            radios.push({ name, location, url: line });
+          }
+        });
+        return radios;
+      } catch (err) {
+        nowPlaying.textContent = 'Erro ao carregar lista.';
+        console.error(err);
+        return [];
+      }
+    }
+
+    /* ---------- Render ---------- */
+    function renderRadios(radios) {
+      radioList.innerHTML = '';
+      if (!radios.length) {
+        radioList.innerHTML = '<div class="loading">Nenhuma rádio encontrada</div>';
+        return;
+      }
+      radios.forEach((radio, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <div class="radio-icon">${idx + 1}</div>
+          <div>
+            <div class="radio-name">${radio.name}</div>
+            <div class="radio-location">${radio.location}</div>
+          </div>
+        `;
+        li.addEventListener('click', () => playRadio(radio, li));
+        radioList.appendChild(li);
+      });
+      nowPlaying.textContent = 'Selecione uma rádio';
+    }
+
+    /* ---------- Play ---------- */
+    function playRadio(radio, li) {
+      if (currentPlayingItem) currentPlayingItem.classList.remove('playing');
+      if (li) {
+        li.classList.add('playing');
+        currentPlayingItem = li;
+      }
+      nowPlaying.innerHTML = `<span>Tocando:</span> ${radio.name} <span style="color:var(--spotify-subtext)">• ${radio.location}</span>`;
+
+      if (window.hls) { window.hls.destroy(); window.hls = null; }
+      audio.pause();
+
+      const url = radio.url;
+      if (url.includes('.m3u8')) {
+        if (Hls.isSupported()) {
+          window.hls = new Hls();
+          window.hls.loadSource(url);
+          window.hls.attachMedia(audio);
+          audio.play();
+        } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+          audio.src = url;
+          audio.play();
+        } else {
+          nowPlaying.textContent = 'HLS não suportado';
+        }
+      } else {
+        audio.src = url;
+        audio.play().catch(e => {
+          nowPlaying.textContent = 'Erro ao tocar: ' + e.message;
+        });
+      }
+    }
+
+    /* ---------- Init ---------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      const customList = getQueryParam('list');
+      const m3uUrl = customList || 'https://raw.githubusercontent.com/Aldemirps/Mybox/refs/heads/main/brazilradio.m3u';
+      loadM3U(m3uUrl).then(renderRadios);
+    });
+  </script>
+</body>
+</html>
