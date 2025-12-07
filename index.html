@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -36,21 +35,30 @@
     header {flex-shrink: 0; padding: 12px 16px; background: var(--spotify-dark); display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.4);}
     header svg {width: 28px; height: 28px;}
     header h1 {font-size: 18px; font-weight: 700; background: linear-gradient(90deg, var(--spotify-green), #1ED760); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+    .search-container {flex-shrink: 0; padding: 12px 16px; background: var(--spotify-dark); border-top: 1px solid #333; border-bottom: 1px solid #333;}
+    .search-box {position: relative;}
+    .search-icon {position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--spotify-subtext); pointer-events: none;}
+    .search-input {width: 100%; padding: 12px 12px 12px 40px; background: var(--spotify-light); border: none; border-radius: 8px; color: var(--spotify-text); font-family: 'Poppins', sans-serif; font-size: 14px;}
+    .search-input:focus {outline: 1px solid var(--spotify-green);}
+    .search-input::placeholder {color: var(--spotify-subtext);}
     main {flex: 1 1 auto; overflow-y: auto; padding: 12px 16px;}
     .now-playing {margin-bottom: 12px; font-size: 14px; text-align: center; color: var(--spotify-green); display: flex; align-items: center; justify-content: center;}
     .now-playing::before {content: ""; width: 8px; height: 8px; background: var(--spotify-green); border-radius: 50%; margin-right: 6px; animation: pulse 1.5s infinite;}
     @keyframes pulse {0%{transform:scale(.9)}50%{transform:scale(1.2)}100%{transform:scale(.9)}}
     .radio-list {list-style: none; padding: 0; margin: 0;}
-    .radio-list li {padding: 14px 12px; margin-bottom: 8px; background: var(--spotify-light); border-radius: 8px; display: flex; align-items: center; gap: 12px; font-size: 15px;}
+    .radio-list li {padding: 14px 12px; margin-bottom: 8px; background: var(--spotify-light); border-radius: 8px; display: flex; align-items: center; gap: 12px; font-size: 15px; cursor: pointer;}
     .radio-list li.playing {border-left: 4px solid var(--spotify-green); background: rgba(29,185,84,.15);}
-    .radio-icon {width: 28px; height: 28px; background: var(--spotify-green); color: var(--spotify-black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;}
-    .radio-name {font-weight: 600;}
-    .radio-location {font-size: 12px; color: var(--spotify-subtext);}
+    .radio-icon {width: 28px; height: 28px; background: var(--spotify-green); color: var(--spotify-black); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;}
+    .radio-info {flex: 1; min-width: 0;}
+    .radio-name {font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+    .radio-location {font-size: 12px; color: var(--spotify-subtext); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
     footer {flex-shrink: 0; padding: 12px 16px; background: var(--spotify-dark); border-top: 1px solid #333;}
     audio {width: 100%; height: 44px; border-radius: 500px; filter: invert(1) hue-rotate(180deg) brightness(1.5);}
     .loading {text-align: center; padding: 40px 0; color: var(--spotify-subtext);}
     .loading-spinner {width: 32px; height: 32px; border: 4px solid rgba(255,255,255,.2); border-top-color: var(--spotify-green); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;}
     @keyframes spin {to{transform:rotate(360deg)}}
+    .no-results {text-align: center; padding: 20px; color: var(--spotify-subtext); font-size: 14px;}
+    .result-count {font-size: 12px; color: var(--spotify-subtext); text-align: right; margin-top: 8px; margin-bottom: 12px;}
   </style>
 </head>
 <body>
@@ -61,6 +69,17 @@
       </svg>
       <h1>Rádios do Brasil</h1>
     </header>
+
+    <div class="search-container">
+      <div class="search-box">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar rádio por nome ou local...">
+      </div>
+      <div class="result-count" id="resultCount"></div>
+    </div>
 
     <main>
       <div class="now-playing" id="nowPlaying">Selecione uma rádio</div>
@@ -78,7 +97,11 @@
     const audio = document.getElementById('audioPlayer');
     const nowPlaying = document.getElementById('nowPlaying');
     const radioList = document.getElementById('radioList');
+    const searchInput = document.getElementById('searchInput');
+    const resultCount = document.getElementById('resultCount');
     let currentPlayingItem = null;
+    let allRadios = [];
+    let filteredRadios = [];
 
     /* ---------- Service Worker ---------- */
     if ('serviceWorker' in navigator) {
@@ -140,18 +163,54 @@
       }
     }
 
+    /* ---------- Search ---------- */
+    function filterRadios() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        filteredRadios = [...allRadios];
+      } else {
+        filteredRadios = allRadios.filter(radio => 
+          radio.name.toLowerCase().includes(searchTerm) || 
+          radio.location.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      updateResultCount();
+      renderRadios(filteredRadios);
+    }
+
+    function updateResultCount() {
+      if (!allRadios.length) {
+        resultCount.textContent = '';
+        return;
+      }
+      
+      if (searchInput.value.trim() === '') {
+        resultCount.textContent = `${allRadios.length} rádios disponíveis`;
+      } else {
+        resultCount.textContent = `${filteredRadios.length} de ${allRadios.length} rádios encontradas`;
+      }
+    }
+
     /* ---------- Render ---------- */
     function renderRadios(radios) {
       radioList.innerHTML = '';
+      
       if (!radios.length) {
-        radioList.innerHTML = '<div class="loading">Nenhuma rádio encontrada</div>';
+        if (searchInput.value.trim() !== '') {
+          radioList.innerHTML = '<div class="no-results">Nenhuma rádio encontrada com esse termo.</div>';
+        } else {
+          radioList.innerHTML = '<div class="loading">Nenhuma rádio disponível</div>';
+        }
         return;
       }
+      
       radios.forEach((radio, idx) => {
         const li = document.createElement('li');
         li.innerHTML = `
           <div class="radio-icon">${idx + 1}</div>
-          <div>
+          <div class="radio-info">
             <div class="radio-name">${radio.name}</div>
             <div class="radio-location">${radio.location}</div>
           </div>
@@ -159,7 +218,10 @@
         li.addEventListener('click', () => playRadio(radio, li));
         radioList.appendChild(li);
       });
-      nowPlaying.textContent = 'Selecione uma rádio';
+      
+      if (!searchInput.value.trim()) {
+        nowPlaying.textContent = 'Selecione uma rádio';
+      }
     }
 
     /* ---------- Play ---------- */
@@ -199,7 +261,24 @@
     document.addEventListener('DOMContentLoaded', () => {
       const customList = getQueryParam('list');
       const m3uUrl = customList || 'https://raw.githubusercontent.com/Aldemirps/Mybox/refs/heads/main/brazilradio.m3u';
-      loadM3U(m3uUrl).then(renderRadios);
+      
+      loadM3U(m3uUrl).then(radios => {
+        allRadios = radios;
+        filteredRadios = [...radios];
+        updateResultCount();
+        renderRadios(radios);
+      });
+
+      // Event listener para busca em tempo real
+      searchInput.addEventListener('input', filterRadios);
+      
+      // Focar no campo de busca ao pressionar Ctrl+F
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      });
     });
   </script>
 </body>
